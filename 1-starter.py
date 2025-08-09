@@ -1,11 +1,29 @@
+import os
+from dotenv import load_dotenv
 import semantic_kernel as sk
-from semantic_kernel.connectors.ai.open_ai import OpenAIChatCompletion
+from semantic_kernel.connectors.ai.open_ai import AzureChatCompletion
 
+# Load environment variables
+load_dotenv()
+
+# Create kernel
 kernel = sk.Kernel()
-api_key, org_id = sk.get_openai_api_key()
-kernel.add_chat_completion_service("chat-gpt", OpenAIChatCompletion("gpt-3.5-turbo", api_key, org_id))
 
-skill = kernel.import_skill_from_directory("plugins", "cooking")
-recipe_function = skill["RecipeGenerator"]
+# Add Azure OpenAI chat completion service
+kernel.add_service(
+    AzureChatCompletion(
+        deployment_name="gpt-35-turbo",  # Using GPT-3.5-turbo
+        endpoint=os.getenv("AZURE_OPENAI_API_BASE"),
+        api_key=os.getenv("AZURE_OPENAI_API_KEY"),
+        api_version=os.getenv("AZURE_OPENAI_API_VERSION")
+    )
+)
 
-print(recipe_function.invoke("chocolate cake"))
+# Import the cooking plugin
+plugin = kernel.import_plugin_from_directory("plugins/cooking")
+recipe_function = plugin["RecipeGenerator"]
+
+# Test the recipe generator
+print("Generating recipe for chocolate cake...")
+result = recipe_function.invoke("chocolate cake")
+print(result)
